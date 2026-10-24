@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeoQuest — Apprends en jouant</title>
+<style>
+:root{--navy:#10233f;--blue:#3168f5;--pale:#eef4ff;--ink:#17243b;--muted:#68758b;--white:#fff;--green:#14845c;--red:#c33d52}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7fb;color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#10233f,#214f9b);color:white;padding:22px max(20px,calc((100% - 1100px)/2));}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{font-size:1.5rem;font-weight:850;letter-spacing:-.04em}.brand span{color:#8fb5ff}
+header p{margin:8px 0 0;color:#d8e4ff}
+main{max-width:1100px;margin:26px auto;padding:0 18px 48px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.stat,.panel{background:white;border:1px solid #e5eaf3;border-radius:18px;box-shadow:0 8px 25px #10233f0a}
+.stat{padding:16px}.stat small{color:var(--muted);display:block;margin-bottom:6px}.stat strong{font-size:1.5rem}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:11px 15px;font-weight:700;transition:transform .12s,background .12s}
+button:active{transform:scale(.98)}
+.tab{background:#e8edf7;color:#3b4b65}.tab.active{background:var(--navy);color:white}
+.primary{background:var(--blue);color:white}.secondary{background:#edf2ff;color:#244cbd}
+.panel{padding:clamp(18px,3vw,28px)}
+.panel h2{margin:0 0 8px;font-size:1.35rem}.sub{color:var(--muted);margin:0 0 20px;line-height:1.5}
+.quiz-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:stretch}
+.question-card{background:#f7f9fd;border:1px solid #e5ebf5;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:220px;padding:22px}
+.flag{font-size:clamp(4rem,10vw,6.5rem);line-height:1.3;filter:drop-shadow(0 5px 8px #0001)}
+.question-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:800}
+.question-text{font-size:1.3rem;font-weight:800;margin-top:10px}
+.answers{display:grid;gap:10px;align-content:center}
+.answer{background:white;border:1px solid #dfe6f1;color:var(--ink);text-align:left;padding:14px;border-radius:13px}
+.answer:hover{border-color:#8daaff;background:#f7f9ff}
+.answer:disabled{cursor:default;opacity:1}
+.answer.correct{background:#e6f7ef;border-color:#79c9a8;color:#116342}
+.answer.wrong{background:#fff0f1;border-color:#efa1ab;color:#9d2436}
+.feedback{min-height:28px;margin-top:14px;font-weight:700}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.hidden{display:none!important}
+.map-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+.world-map{background:linear-gradient(#edf6ff,#e9f2ff);border-radius:16px;padding:14px;min-height:280px}
+.world-map svg{width:100%;height:auto;display:block}
+.land{fill:#a7c8b0;stroke:#fff;stroke-width:2;cursor:pointer;transition:fill .15s}
+.land:hover{fill:#74a989}.land.selected{fill:#3168f5}
+.map-help{background:#f7f9fd;border-radius:14px;padding:18px}
+.map-help h3{margin:0 0 8px}.map-help p{color:var(--muted);line-height:1.5}
+.note{font-size:.85rem;color:var(--muted);line-height:1.5;margin-top:16px}
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:20px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:12px}.stat strong{font-size:1.2rem}.quiz-layout,.map-grid{grid-template-columns:1fr}.question-card{min-height:170px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><div class="brand">🌍 Geo<span>Quest</span></div><div>Apprends le monde en jouant</div></div>
+  <p>Des drapeaux, des capitales et des défis pour devenir un explorateur du monde.</p>
+</header>
+<main>
+  <section class="stats" aria-label="Progression">
+    <div class="stat"><small>⭐ Points</small><strong id="points">0</strong></div>
+    <div class="stat"><small>🏅 Niveau</small><strong id="level">Explorateur</strong></div>
+    <div class="stat"><small>✅ Bonnes réponses</small><strong id="wins">0</strong></div>
+  </section>
+  <nav class="tabs" aria-label="Activités">
+    <button class="tab active" data-view="flags">🏳️ Quiz des drapeaux</button>
+    <button class="tab" data-view="capitals">🏙️ Quiz des capitales</button>
+    <button class="tab" data-view="map">🗺️ Carte interactive</button>
+  </nav>
+  <section id="quiz" class="panel">
+    <h2 id="quiz-title">Reconnais le drapeau</h2>
+    <p class="sub" id="quiz-sub">Choisis la bonne réponse. Chaque bonne réponse te rapporte 10 points.</p>
+    <div class="quiz-layout">
+      <div class="question-card">
+        <div class="question-label" id="question-label">Quel pays possède ce drapeau ?</div>
+        <div class="flag" id="flag">🇯🇵</div>
+        <div class="question-text" id="question-text">À quel pays appartient-il ?</div>
+      </div>
+      <div><div class="answers" id="answers"></div><div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="row"><button class="primary" id="next">Question suivante →</button><button class="secondary" id="reset">Recommencer</button></div>
+      </div>
+    </div>
+    <p class="note">Astuce : joue plusieurs fois pour progresser. Les points et le meilleur score sont enregistrés sur cet appareil.</p>
+  </section>
+  <section id="map-panel" class="panel hidden">
+    <h2>Explore la carte</h2>
+    <p class="sub">Clique sur une zone colorée pour découvrir un continent. Cette première carte est schématique : elle sert à explorer, pas à montrer les frontières exactes.</p>
+    <div class="map-grid">
+      <div class="world-map">
+        <svg viewBox="0 0 600 300" role="img" aria-label="Carte schématique des continents">
+          <path class="land" data-name="Amérique du Nord" d="M50 65 L95 35 L160 45 L190 80 L160 112 L135 140 L105 132 L80 105 Z"/>
+          <path class="land" data-name="Amérique du Sud" d="M170 145 L205 155 L220 190 L205 235 L185 270 L170 225 L155 185 Z"/>
+          <path class="land" data-name="Europe" d="M270 65 L305 50 L330 70 L318 92 L285 92 Z"/>
+          <path class="land" data-name="Afrique" d="M290 105 L335 105 L355 145 L330 205 L305 190 L280 145 Z"/>
+          <path class="land" data-name="Asie" d="M330 55 L405 35 L500 60 L535 100 L490 130 L420 115 L365 95 Z"/>
+          <path class="land" data-name="Océanie" d="M455 180 L500 170 L530 195 L510 220 L470 215 Z"/>
+          <path class="land" data-name="Antarctique" d="M150 278 L230 270 L320 280 L410 270 L480 282 L400 294 L240 292 Z"/>
+        </svg>
+      </div>
+      <aside class="map-help"><h3 id="continent-title">À toi d'explorer !</h3><p id="continent-description">Sélectionne un continent sur la carte pour voir une petite information.</p><div class="row"><button class="secondary" id="map-challenge">Défi des continents</button></div><div class="feedback" id="map-feedback" aria-live="polite"></div></aside>
+    </div>
+  </section>
+</main>
+<footer>GeoQuest · Première version gratuite · Créé pour apprendre en s'amusant</footer>
+<script>
+const countries = [
+ {name:"Japon",flag:"🇯🇵",capital:"Tokyo"},
+ {name:"France",flag:"🇫🇷",capital:"Paris"},
+ {name:"Brésil",flag:"🇧🇷",capital:"Brasília"},
+ {name:"Canada",flag:"🇨🇦",capital:"Ottawa"},
+ {name:"Égypte",flag:"🇪🇬",capital:"Le Caire"},
+ {name:"Australie",flag:"🇦🇺",capital:"Canberra"},
+ {name:"Italie",flag:"🇮🇹",capital:"Rome"},
+ {name:"Inde",flag:"🇮🇳",capital:"New Delhi"},
+ {name:"Mexique",flag:"🇲🇽",capital:"Mexico"},
+ {name:"Kenya",flag:"🇰🇪",capital:"Nairobi"},
+ {name:"Grèce",flag:"🇬🇷",capital:"Athènes"},
+ {name:"Corée du Sud",flag:"🇰🇷",capital:"Séoul"}
+];
+const continentInfo = {
+ "Amérique du Nord":"Le Canada, les États-Unis et le Mexique se trouvent en Amérique du Nord.",
+ "Amérique du Sud":"Le Brésil est le plus grand pays d'Amérique du Sud.",
+ "Europe":"La France, l'Italie et la Grèce se trouvent en Europe.",
+ "Afrique":"L'Afrique compte de nombreux climats, langues et paysages.",
+ "Asie":"L'Asie est le continent le plus vaste et le plus peuplé.",
+ "Océanie":"L'Australie est le plus grand pays d'Océanie.",
+ "Antarctique":"L'Antarctique est un continent très froid, sans population permanente."
+};
+let mode="flags", current=null, answered=false, points=0, wins=0, round=0, mapChallenge=false;
+const $=id=>document.getElementById(id);
+function shuffle(arr){return [...arr].sort(()=>Math.random()-.5)}
+function updateStats(){
+ $("points").textContent=points; $("wins").textContent=wins;
+ $("level").textContent=points>=100?"Géographe expert":points>=50?"Explorateur confirmé":points>=20?"Voyageur curieux":"Explorateur";
+}
+function setMode(newMode){
+ mode=newMode;
+ document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===mode));
+ $("quiz").classList.toggle("hidden",mode==="map"); $("map-panel").classList.toggle("hidden",mode!=="map");
+ if(mode!=="map"){ $("quiz-title").textContent=mode==="flags"?"Reconnais le drapeau":"Trouve la capitale"; $("quiz-sub").textContent=mode==="flags"?"Choisis le pays correspondant au drapeau. Chaque bonne réponse rapporte 10 points.":"Choisis la bonne capitale. Chaque bonne réponse rapporte 10 points."; newQuestion();}
+}
+function newQuestion(){
+ answered=false; round++;
+ current=countries[Math.floor(Math.random()*countries.length)];
+ $("feedback").textContent="";
+ $("flag").textContent=mode==="flags"?current.flag:"🌍";
+ $("question-label").textContent=mode==="flags"?"Quel pays possède ce drapeau ?":"Quelle est la capitale de ce pays ?";
+ $("question-text").textContent=mode==="flags"?"À quel pays appartient-il ?":current.name;
+ const correct=mode==="flags"?current.name:current.capital;
+ const others=shuffle(countries.filter(c=>c!==current)).slice(0,3).map(c=>mode==="flags"?c.name:c.capital);
+ const options=shuffle([correct,...others]);
+ const box=$("answers"); box.innerHTML="";
+ options.forEach(option=>{
+  const b=document.createElement("button"); b.className="answer"; b.textContent=option;
+  b.addEventListener("click",()=>choose(b,option,correct)); box.appendChild(b);
+ });
+}
+function choose(button,choice,correct){
+ if(answered)return; answered=true;
+ document.querySelectorAll(".answer").forEach(b=>{b.disabled=true;if(b.textContent===correct)b.classList.add("correct")});
+ if(choice===correct){points+=10;wins++;$("feedback").textContent="Bravo ! +10 points 🎉";}
+ else {button.classList.add("wrong");$("feedback").textContent="Pas tout à fait ! La bonne réponse était : "+correct+".";}
+ updateStats();
+}
+$("next").addEventListener("click",newQuestion);
+$("reset").addEventListener("click",()=>{points=0;wins=0;updateStats();newQuestion()});
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.view)));
+document.querySelectorAll(".land").forEach(shape=>shape.addEventListener("click",()=>{
+ document.querySelectorAll(".land").forEach(s=>s.classList.remove("selected"));shape.classList.add("selected");
+ const name=shape.dataset.name;$("continent-title").textContent=name;$("continent-description").textContent=continentInfo[name];
+ $("map-feedback").textContent="";
+}));
+$("map-challenge").addEventListener("click",()=>{
+ const names=Object.keys(continentInfo); const target=names[Math.floor(Math.random()*names.length)];
+ mapChallenge=true;$("map-feedback").textContent="Défi : clique sur « "+target+" » sur la carte.";
+ document.querySelectorAll(".land").forEach(shape=>shape.onclick=()=>{
+  document.querySelectorAll(".land").forEach(s=>s.classList.remove("selected"));shape.classList.add("selected");
+  if(shape.dataset.name===target){points+=10;wins++;$("map-feedback").textContent="Bien joué ! +10 points 🎉";$("continent-title").textContent=target;$("continent-description").textContent=continentInfo[target];updateStats();}
+  else {$("map-feedback").textContent="Essaie encore : cherche "+target+".";}
+ });
+});
+updateStats();newQuestion();
+</script>
+</body>
+</html>
